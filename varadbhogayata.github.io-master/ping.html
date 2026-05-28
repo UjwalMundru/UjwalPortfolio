@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ping Me | Ujwal Mundru</title>
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/css/materialize.min.css" />
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body>
+  <nav class="teal">
+    <div class="nav-wrapper container">
+      <a href="index.html" class="brand-logo">Ping Me</a>
+      <ul id="nav-mobile" class="right hide-on-med-and-down">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="ping.html">Ping Me</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="section">
+    <div class="container">
+      <div class="row">
+        <div class="col s12 m8 offset-m2">
+          <div class="card">
+            <div class="card-content">
+              <span class="card-title teal-text text-darken-2">Ping Me</span>
+              <p>Send your name, phone number, and email address so I can get back to you.</p>
+              <form id="pingForm" class="row">
+                <div class="input-field col s12">
+                  <input id="name" type="text" class="validate" required>
+                  <label for="name">Name</label>
+                </div>
+                <div class="input-field col s12">
+                  <input id="phone" type="tel" class="validate" pattern="[0-9]{10}" required>
+                  <label for="phone">Phone No.</label>
+                  <span class="helper-text" data-error="Enter a valid 10-digit phone number">Example: 9876543210</span>
+                </div>
+                <div class="input-field col s12">
+                  <input id="email" type="email" class="validate" required>
+                  <label for="email">Email ID</label>
+                </div>
+                <div class="col s12">
+                  <button type="submit" class="btn teal" id="submitBtn">Ping Me</button>
+                  <span id="responseMessage" style="margin-left: 10px;"></span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/js/materialize.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $(".button-collapse").sideNav();
+      
+      // Handle form submission
+      $('#pingForm').submit(function (e) {
+        e.preventDefault();
+
+        const name = $('#name').val();
+        const phone = $('#phone').val();
+        const email = $('#email').val();
+        const $submitBtn = $('#submitBtn');
+        const $responseMsg = $('#responseMessage');
+
+        // Disable button while submitting
+        $submitBtn.prop('disabled', true);
+        $responseMsg.text('Sending...').css('color', 'blue');
+
+        // Send data to backend
+        $.ajax({
+          type: 'POST',
+          url: '/api/ping',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            name: name,
+            phone: phone,
+            email: email
+          }),
+          success: function (response) {
+            if (response.success) {
+              $responseMsg.text('✓ ' + response.message).css('color', 'green');
+              // Clear form
+              $('#pingForm')[0].reset();
+              Materialize.updateTextFields();
+              
+              // Reset message after 5 seconds
+              setTimeout(function () {
+                $responseMsg.text('');
+              }, 5000);
+            }
+          },
+          error: function (xhr) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              $responseMsg.text('✗ ' + response.message).css('color', 'red');
+            } catch (e) {
+              $responseMsg.text('✗ An error occurred. Please try again.').css('color', 'red');
+            }
+          },
+          complete: function () {
+            $submitBtn.prop('disabled', false);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>

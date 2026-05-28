@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Ping Messages</title>
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/css/materialize.min.css" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <nav class="teal">
+    <div class="nav-wrapper container">
+      <a href="index.html" class="brand-logo">Admin</a>
+      <ul id="nav-mobile" class="right hide-on-med-and-down">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="ping.html">Ping Me</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="section">
+    <div class="container">
+      <h4>Ping Messages</h4>
+      <table class="striped responsive-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="messagesBody">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.95.3/js/materialize.min.js"></script>
+  <script>
+    async function fetchMessages() {
+      const tbody = document.getElementById('messagesBody');
+      tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+      try {
+        const res = await fetch('/api/ping/messages');
+        const data = await res.json();
+        if (!data.success) {
+          tbody.innerHTML = `<tr><td colspan="5">Error: ${data.message}</td></tr>`;
+          return;
+        }
+        if (data.count === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No messages found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = '';
+        data.messages.forEach(msg => {
+          const tr = document.createElement('tr');
+          const time = new Date(msg.timestamp).toLocaleString();
+          tr.innerHTML = `
+            <td>${escapeHtml(msg.name)}</td>
+            <td>${escapeHtml(msg.phone)}</td>
+            <td>${escapeHtml(msg.email)}</td>
+            <td>${time}</td>
+            <td><button class="btn red" onclick="deleteMessage('${msg._id}')">Delete</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5">Error fetching messages</td></tr>`;
+      }
+    }
+
+    function escapeHtml(str){
+      if(!str) return '';
+      return String(str).replace(/[&<>"']/g, function(m){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m];
+      });
+    }
+
+    async function deleteMessage(id){
+      if(!confirm('Delete this message?')) return;
+      try{
+        const res = await fetch('/api/ping/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if(data.success){
+          fetchMessages();
+        } else {
+          alert('Delete failed: ' + data.message);
+        }
+      } catch(e){
+        alert('An error occurred');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      fetchMessages();
+    });
+  </script>
+</body>
+</html>
